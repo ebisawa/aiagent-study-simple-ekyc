@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 Int                  @id @default(autoincrement())
+  email              String               @unique
+  name               String?
+  role               Role                 @default(USER)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  images             VerificationImage[]
+  verificationRequests VerificationRequest[] @relation("UserVerificationRequests")
+  reviewedRequests   VerificationRequest[] @relation("ReviewedByAdmin")
+}
+
+model VerificationImage {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  imageUrl  String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  verificationRequests VerificationRequest[]
+}
+
+model VerificationRequest {
+  id          Int                 @id @default(autoincrement())
+  userId      Int
+  imageId     Int
+  status      VerificationStatus  @default(PENDING)
+  reviewedById Int?
+  reviewedAt   DateTime?
+  comment      String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  
+  user        User               @relation("UserVerificationRequests", fields: [userId], references: [id])
+  image       VerificationImage  @relation(fields: [imageId], references: [id])
+  reviewedBy  User?              @relation("ReviewedByAdmin", fields: [reviewedById], references: [id])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
